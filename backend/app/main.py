@@ -1,11 +1,15 @@
-from fastapi import FastAPI
+import os
 
-from .database import SessionLocal
+from fastapi import FastAPI, Depends
+
+from .database import SessionLocal, get_db
 from .router import userRouter
 from .error import commonExceptions, userExceptions
 
 
-app = FastAPI()
+app = FastAPI(dependencies=[Depends(get_db)])
+
+
 commonExceptions.include_app(app)
 userExceptions.include_app(app)
 
@@ -13,10 +17,6 @@ app.include_router(userRouter.router)
 
 
 
-# Dependency
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+@app.on_event('startup')
+def startup_test_code():
+    os.system('pytest -v')
