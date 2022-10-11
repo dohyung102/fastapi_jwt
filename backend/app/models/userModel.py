@@ -1,3 +1,4 @@
+from enum import unique
 from sqlalchemy import Column, String, Integer, Boolean, Date, DateTime, ForeignKey
 from sqlalchemy.sql import func
 
@@ -12,10 +13,10 @@ class User(Base):
     registration_date = Column(Date, server_default=func.now())
     is_admin = Column(Boolean)
 
-class UserSession(Base):
-    __tablename__ = "UserSession"
+class UserToken(Base):
+    __tablename__ = "UserToken"
 
     id = Column(Integer, primary_key=True)
-    session_key = Column(String, unique=True)
+    access_token = Column(String, unique=True)
+    refresh_token = Column(String, unique=True)
     login_date = Column(DateTime(timezone=True), server_default=func.now())
-    user_id = Column(String, ForeignKey("User.id"))

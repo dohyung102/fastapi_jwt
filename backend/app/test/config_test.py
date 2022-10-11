@@ -18,3 +18,9 @@ engine = create_engine(
 )
 TestSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
+def get_test_db():
+    test_db = TestSessionLocal()
+    try:
+        yield test_db
+    finally:
+        test_db.close()

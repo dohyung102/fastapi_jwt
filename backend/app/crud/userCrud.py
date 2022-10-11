@@ -18,3 +18,16 @@ def create_user(db: Session, user: userSchemas.UserCreate):
     db.commit()
     db.refresh(db_user)
     return db_user
+
+def get_user_by_id_and_password(db: Session, id: str, password: str):
+    return db.query(userModel.User).filter(userModel.User.id == id, userModel.User.password == password).first()
+
+def get_login_user_by_user_id(db: Session, user_id: str):
+    return db.query(userModel.UserSession).filter(userModel.UserSession.user_id == user_id).first()
+
+def login_user(db: Session, user: userSchemas.UserTokenBase):
+    db_login_user = userModel.UserToken(**user.dict())
+    db.add(db_login_user)
+    db.commit()
+    db.refresh(db_login_user)
+    return db_login_user

@@ -1,11 +1,10 @@
 from datetime import date, datetime
 
 from pydantic import BaseModel, constr, validator
-import pydantic
+
 class UserBase(BaseModel):
     id: constr(min_length=5, max_length=20)
-    email: constr()
-    # email: constr(regex=r'[A-Za-z]+@[a-z]+\.[a-z]+')
+    email: constr(regex=r'^[A-Za-z0-9]+@[A-Za-z0-9]+\.[a-z]+$')
 
 class UserCreate(UserBase):
     password: constr(regex=r'^(?=.*[\d])(?=.*[a-z])(?=.*[!@#$%^&*()])[\w\d!@#$%^&*()]{8,20}')
@@ -27,16 +26,13 @@ class User(UserBase):
         orm_mode = True
 
 
-class UserSessionBase(BaseModel):
-    user_id: constr(min_length=5, max_length=20)
+class UserTokenBase(BaseModel):
+    access_token: str
+    refresh_token: str
 
-class UserSessionCreate(UserSessionBase):
-    password: constr(min_length=8, max_length=20)
-
-class UserSession(UserSessionBase):
+class UserToken(UserTokenBase):
     id: int
-    session_key: str
-    login_date: datetime
+    login_date: date
 
     class Config:
         orm_mode = True
