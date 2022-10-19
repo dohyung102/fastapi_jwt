@@ -12,14 +12,10 @@ from ..database import engine
 from ..crud import userCrud
 from ..schemas import userSchemas
 from ..models import userModel
+from ..common import ACCESS_TOKEN_EXPIRE_MINUTES, REFRESH_TOKEN_EXPIRE_MINUTES, ACCESS_SECRET_KEY, REFRESH_SECRET_KEY, ALGORITHM
 from ..error.commonExceptions import ExistException, NotFoundException
 from ..error.userExceptions import PasswordNotMatchException
 
-ACCESS_SECRET_KEY = "5b7caa062f47fefeece8e25004fd2ac62e40109227a948972d35ffbc8a26ef1f"
-REFRESH_SECRET_KEY = "ea04ecd2790f5171341279f0134e29adcd7c1c80b1641761"
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 1440
-REFRESH_TOKEN_EXPIRE_MINUTES = 2880
 
 userModel.Base.metadata.create_all(bind=engine)
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -58,19 +54,30 @@ def create_user(user: userSchemas.UserValid, db: Session = Depends(get_db)):
     return userCrud.create_user(db, user=create_user)
 
 @router.get("/certification")
-def certificate_email(email: str, background_tasks: BackgroundTasks):
+def certificate_email(email: str, background_tasks: BackgroundTasks, user_id: str = None, regist: bool = False, db: Session = Depends(get_db)):
+    if regist:
+        if user_id:
+            user = userCrud.get_user_by_id_and_email(db, user_id, email)
+        else:
+            user = userCrud.get_user_by_email(db, email)
+        if not user:
+            raise NotFoundException(name=email)
     str_length = random.randint(4, 6)
     str_value = ''.join(random.choice(string.ascii_letters + string.digits) for _ in range(str_length))
     background_tasks.add_task(
         send_certification_email, email=email, value=str_value
     )
-    return str_value
+    if regist and not user_id:
+        data = dict(str_value=str_value, user_id=user.id)
+        return data
+    else:
+        return str_value
 
 @router.post("/login", response_model=userSchemas.UserToken)
 def login_user(user: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    db_user = userCrud.get_user_by_id_and_password(db, id=user.username, password=pwd_context.hash(user.password))
-    if not db_user:
-        raise NotFoundException(name=user.id)
+    db_user = userCrud.get_user_by_id(db, id=user.username)
+    if not db_user or not pwd_context.verify(user.password, db_user.password):
+        raise NotFoundException(name=user.username)
     access_token_expires, refresh_token_expires = map(lambda minutes: timedelta(minutes=minutes), [ACCESS_TOKEN_EXPIRE_MINUTES, REFRESH_TOKEN_EXPIRE_MINUTES])
     users = [{"sub": user.username}, {"sub": user.username}]
     expires = [access_token_expires, refresh_token_expires]
@@ -78,3 +85,19 @@ def login_user(user: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
     access_token, refresh_token = map(create_token, users, expires, secret_keys)
     no_login_user = userSchemas.UserTokenBase(access_token=access_token, refresh_token=refresh_token)
     return userCrud.login_user(db, user=no_login_user)
+
+@router.get("/{userId}", response_model=userSchemas.User)
+def get_user(userId: str, db: Session = Depends(get_db)):
+    return userCrud.get_user_by_id(db, userId)
+
+@router.get("/find-user-id")
+def find_user_id(user: userSchemas.UserEmail, db: Session = Depends(get_db)):
+    return userCrud.get_user_id_by_email(db, email=user.email)
+
+@router.put("/change-password", response_model=userSchemas.User)
+def change_password(user: userSchemas.UserValid, db: Session = Depends(get_db)):
+    user.password = pwd_context.hash(user.password)
+    update_user = userSchemas.UserCreate(**user.dict())
+    return userCrud.update_user_password(db, user=update_user)
+
+

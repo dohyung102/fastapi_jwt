@@ -26,6 +26,10 @@ class User(UserBase):
         orm_mode = True
 
 
+class UserEmail(BaseModel):
+    email: constr(regex=r'^[A-Za-z0-9]+@[A-Za-z0-9]+\.[a-z]+$')
+
+
 class UserTokenBase(BaseModel):
     access_token: str
     refresh_token: str
