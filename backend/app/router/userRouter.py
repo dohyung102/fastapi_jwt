@@ -1,24 +1,29 @@
 from datetime import datetime, timedelta
 import random, string, os, yagmail
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, BackgroundTasks
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from starlette.responses import Response
+from starlette import status
 from sqlalchemy.orm import Session
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 
-from ..main import get_db
-from ..database import engine
-from ..crud import userCrud
-from ..schemas import userSchemas
-from ..models import userModel
-from ..common import ACCESS_TOKEN_EXPIRE_MINUTES, REFRESH_TOKEN_EXPIRE_MINUTES, ACCESS_SECRET_KEY, REFRESH_SECRET_KEY, ALGORITHM
-from ..error.commonExceptions import ExistException, NotFoundException
-from ..error.userExceptions import PasswordNotMatchException
+from main import get_db
+from database import engine
+from crud import userCrud
+from schemas import userSchemas
+from models import userModel
+from common import ACCESS_TOKEN_EXPIRE_MINUTES, REFRESH_TOKEN_EXPIRE_MINUTES, ACCESS_SECRET_KEY, REFRESH_SECRET_KEY, ALGORITHM
+from error.commonExceptions import ExistException, NotFoundException
+from error.userExceptions import PasswordNotMatchException, NotUserAndUserTokenMatchException
 
 
 userModel.Base.metadata.create_all(bind=engine)
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 router = APIRouter(
     prefix="/users",
@@ -83,8 +88,8 @@ def login_user(user: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
     expires = [access_token_expires, refresh_token_expires]
     secret_keys = [ACCESS_SECRET_KEY, REFRESH_SECRET_KEY]
     access_token, refresh_token = map(create_token, users, expires, secret_keys)
-    no_login_user = userSchemas.UserTokenBase(access_token=access_token, refresh_token=refresh_token)
-    return userCrud.login_user(db, user=no_login_user)
+    # no_login_user = userSchemas.UserTokenBase(access_token=access_token, refresh_token=refresh_token)
+    return userSchemas.UserToken(access_token=access_token, refresh_token=refresh_token)
 
 @router.get("/{userId}", response_model=userSchemas.User)
 def get_user(userId: str, db: Session = Depends(get_db)):
@@ -100,4 +105,11 @@ def change_password(user: userSchemas.UserValid, db: Session = Depends(get_db)):
     update_user = userSchemas.UserCreate(**user.dict())
     return userCrud.update_user_password(db, user=update_user)
 
+@router.delete("/{userId}")
+def delete_user(userId: str, token: Annotated[str, Depends(oauth2_scheme)] ,db: Session = Depends(get_db)):
+    payload = jwt.decode(token, ACCESS_SECRET_KEY, algorithms=[ALGORITHM])
+    jwt_user_id = payload.get('sub')
+    if not jwt_user_id == userId:
+        raise NotUserAndUserTokenMatchException()
+    return userCrud.delete_user_by_user_id(db, id=userId)
 

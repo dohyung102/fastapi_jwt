@@ -1,12 +1,6 @@
-# develop_diary
+# fastapi를 이용한 jwt 기반 crud 구현 및 간단한 테스트 코드 작성
 
 ### 기술스택
-* vue.js
 * fastapi
 * postgresql
 
-
-### 개발일기
-* [개발에 앞서](https://relieved-hall-1b5.notion.site/bc53063c1f094c6b9f2a9c7b1b549d48)
-
-* [개발일기](https://relieved-hall-1b5.notion.site/df801b02d46f4cc590a244ccbee1ca25)

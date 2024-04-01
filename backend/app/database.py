@@ -1,7 +1,7 @@
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-
+# from sqlmodel import create_engine
 user = "dohyung102"
 password = "dohyung"
 host = "127.0.0.1"

@@ -2,7 +2,7 @@ from enum import unique
 from sqlalchemy import Column, String, Integer, Boolean, Date, DateTime, ForeignKey
 from sqlalchemy.sql import func
 
-from ..database import Base
+from database import Base
 
 class User(Base):
     __tablename__ = "User"
@@ -13,10 +13,10 @@ class User(Base):
     registration_date = Column(Date, server_default=func.now())
     is_admin = Column(Boolean)
 
-class UserToken(Base):
-    __tablename__ = "UserToken"
+# class UserToken(Base):
+#     __tablename__ = "UserToken"
 
-    id = Column(Integer, primary_key=True)
-    access_token = Column(String, unique=True)
-    refresh_token = Column(String, unique=True)
-    login_date = Column(DateTime(timezone=True), server_default=func.now())
+#     id = Column(Integer, primary_key=True)
+#     access_token = Column(String, unique=True)
+#     refresh_token = Column(String, unique=True)
+#     login_date = Column(DateTime(timezone=True), server_default=func.now())

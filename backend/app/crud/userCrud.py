@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 
-from ..models import userModel
-from ..schemas import userSchemas
+from models import userModel
+from schemas import userSchemas
 
 def get_user_by_id(db: Session, id: str):
     return db.query(userModel.User).filter(userModel.User.id == id).first()
@@ -28,12 +28,12 @@ def get_user_by_id_and_password(db: Session, id: str, password: str):
 def get_login_user_by_user_id(db: Session, user_id: str):
     return db.query(userModel.UserSession).filter(userModel.UserSession.user_id == user_id).first()
 
-def login_user(db: Session, user: userSchemas.UserTokenBase):
-    db_login_user = userModel.UserToken(**user.dict())
-    db.add(db_login_user)
-    db.commit()
-    db.refresh(db_login_user)
-    return db_login_user
+# def login_user(db: Session, user: userSchemas.UserTokenBase):
+#     db_login_user = userModel.UserToken(**user.dict())
+#     db.add(db_login_user)
+#     db.commit()
+#     db.refresh(db_login_user)
+#     return db_login_user
 
 def get_user_id_by_email(db: Session, email: str):
     return db.query(userModel.User.id).filter(userModel.User.email == email).first()
@@ -47,3 +47,9 @@ def update_user_password(db: Session, user: userSchemas.UserCreate):
     )
     db.commit()
     return db_user
+
+def delete_user_by_user_id(db: Session, id: str):
+    delete_user = db.query(userModel.User).filter(userModel.User.id == id).delete()
+    db.commit()
+    return delete_user
+    

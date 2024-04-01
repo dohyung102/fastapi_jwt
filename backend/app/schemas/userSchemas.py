@@ -1,13 +1,23 @@
 from datetime import date, datetime
+import re
 
-from pydantic import BaseModel, constr, validator
+from pydantic import BaseModel, constr, validator, Field, field_validator
 
 class UserBase(BaseModel):
     id: constr(min_length=5, max_length=20)
-    email: constr(regex=r'^[A-Za-z0-9]+@[A-Za-z0-9]+\.[a-z]+$')
+    email: constr(pattern=r'^[A-Za-z0-9]+@[A-Za-z0-9]+\.[a-z]+$')
 
 class UserCreate(UserBase):
-    password: constr(regex=r'^(?=.*[\d])(?=.*[a-z])(?=.*[!@#$%^&*()])[\w\d!@#$%^&*()]{8,20}')
+    password: str = Field(min_length=8)
+
+    @field_validator("password")
+    @classmethod
+    def regex_match(cls, p: str) -> str:
+        re_for_pw: re.Pattern[str] = re.compile(r"^(?=.*?[\d])(?=.*?[a-z])(?=.*?[!@#$%^&*()])[\w\d!@#$%^&*()]{8,20}")
+        if not re_for_pw.match(p):
+            raise ValueError("invalid password")
+        return p
+
     
 class UserValid(UserCreate):
     password_validation: constr(min_length=8, max_length=20)
@@ -23,20 +33,14 @@ class User(UserBase):
     is_admin: bool | None = False
 
     class Config:
-        orm_mode = True
+        from_attribute = True
 
 
 class UserEmail(BaseModel):
-    email: constr(regex=r'^[A-Za-z0-9]+@[A-Za-z0-9]+\.[a-z]+$')
+    email: constr(pattern=r'^[A-Za-z0-9]+@[A-Za-z0-9]+\.[a-z]+$')
 
 
-class UserTokenBase(BaseModel):
+class UserToken(BaseModel):
     access_token: str
     refresh_token: str
 
-class UserToken(UserTokenBase):
-    id: int
-    login_date: date
-
-    class Config:
-        orm_mode = True

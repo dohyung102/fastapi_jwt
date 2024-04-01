@@ -2,9 +2,9 @@ import os
 
 from fastapi import FastAPI, Depends
 
-from .database import SessionLocal, get_db
-from .router import userRouter
-from .error import commonExceptions, userExceptions
+from database import SessionLocal, get_db
+from router import userRouter
+from error import commonExceptions, userExceptions
 
 
 app = FastAPI(dependencies=[Depends(get_db)])
