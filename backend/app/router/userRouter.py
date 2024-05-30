@@ -28,7 +28,6 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 router = APIRouter(
     prefix="/users",
     tags=["users"],
-    dependencies=[Depends(get_db)],
     responses={404: {"description": "Not found"}},
 )
 
